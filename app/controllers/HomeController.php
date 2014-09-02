@@ -13,7 +13,10 @@ class HomeController extends BaseController {
 			$dimensions = $metadata['dimensions'];
 			$metrics = $metadata['metrics'];
 			
-			return View::make('home', [ 'dimensions' => $dimensions, 'metrics' => $metrics ]);
+			return View::make('home', [ 
+										'dimensions' => $dimensions, 
+										'metrics' => $metrics 
+									]);
 		}//if
 		else{
 			$url = $this->ga->getLoginUrl();
@@ -34,6 +37,12 @@ class HomeController extends BaseController {
 		}//else
 	}//login
 
+	public function segments(){
+		$segments = $this->ga->segments();
+
+		return $segments;
+	}//segments
+
 	public function accounts(){
 		$accounts = $this->ga->accounts();
 
@@ -50,7 +59,7 @@ class HomeController extends BaseController {
 		$views = $this->ga->views( $account_id ,$property_id );
 
 		return $views;
-	}//properties
+	}//views
 
 	public function metadata(){
 		$metadata = $this->ga->metadata();
@@ -72,7 +81,7 @@ class HomeController extends BaseController {
 				'code'		=> 1,
 				'message'	=> 'Invalid request parametter'
 			]);
-
+		
 		$view = 'ga:' . Input::get('view');
 		$dimensions = Input::get('dimensions');
 		$metrics = Input::get('metrics');
@@ -80,6 +89,6 @@ class HomeController extends BaseController {
 		$report = $this->ga->report( $view, $dimensions, $metrics );
 
 		return View::make('report', [ 'columns' => $report['columnHeaders'], 'items' => $report['items'], 'totalResults' => $report['totalResults' ] ]);
-	}//metadata
+	}//report
 
 }//class

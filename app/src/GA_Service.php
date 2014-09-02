@@ -50,13 +50,25 @@ class GA_Service{
 		return $authUrl;
 	}//getLoginUrl
 
+	public function segments(){
+		if( !$this->isLoggedIn() ){
+			//login
+		}
+
+		$service = new Google_AnalyticsService($this->client);
+		$segments = $service->management_segments->listManagementSegments();
+
+		return $segments;
+	}//segments
+
 	public function accounts(){
 		if( !$this->isLoggedIn() ){
 			//login
 		}
 
 		$service = new Google_AnalyticsService($this->client);
-		$man_accounts = $service->management_accounts->listManagementAccounts( [ 'max-results' => 1, 'start-index' => 1 ] );
+
+		$man_accounts = $service->management_accounts->listManagementAccounts();
 		$accounts = [];
 
 		foreach ($man_accounts['items'] as $account) {
