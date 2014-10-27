@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Input;
+
 class HomeController extends BaseController {
 	private $ga;
 
@@ -86,9 +88,65 @@ class HomeController extends BaseController {
 		$dimensions = Input::get('dimensions');
 		$metrics = Input::get('metrics');
 
-		$report = $this->ga->report( $view, $dimensions, $metrics );
+        $daterange = explode( ' - ', Input::get('daterange') );
+        $start_date = $daterange[0];
+        $end_date = $daterange[1];
 
-		return View::make('report', [ 'columns' => $report['columnHeaders'], 'items' => $report['items'], 'totalResults' => $report['totalResults' ] ]);
+        $max_results = intval( Input::get('max_results') );
+
+
+        $filters = [];
+        $group_filters = [];
+        $group_filters['dimensions'] = GA_Utils::groupFilters(
+                                                            Input::get('dimension_filter_show'),
+                                                            Input::get('dimension_filters'),
+                                                            Input::get('dimension_filter_rules'),
+                                                            Input::get('dimension_filter_values')
+                                                        );
+        $tmp = GA_Utils::encodeDimensionFilters( $group_filters['dimensions'] );
+
+        if( !empty($tmp) )
+            $filters[] = $tmp;
+
+
+        $group_filters['metrics'] = GA_Utils::groupFilters(
+            Input::get('metric_filter_show'),
+            Input::get('metric_filters'),
+            Input::get('metric_filter_rules'),
+            Input::get('metric_filter_values')
+        );
+
+        $tmp = GA_Utils::encodeMetricFilters( $group_filters['metrics'] );
+
+        if( !empty($tmp) )
+            $filters[] = $tmp;
+
+        //dimension and filters cannot be combined using the OR operator (,)
+        $filters = implode(';', $filters);
+        $orderbys = NULL;
+
+        if( Input::has('orderbys') )
+            $orderbys = GA_Utils::encodeOrderby( GA_Utils::groupOrderby(Input::get('orderbys'), Input::get('orderby_rules') ) );
+
+
+
+		$report = $this->ga->report( $view, $start_date, $end_date, $max_results, $dimensions, $metrics, $filters, $orderbys );
+
+        $json_data = [];
+        foreach( $report['items'] as $item ){
+            $json_data[] = [
+                'name'  => $item[0],
+                'y'     => (int) $item[1]
+            ];
+        }//foreach
+
+		return View::make('report', [
+                                        'columns'       => $report['columnHeaders'],
+                                        'items'         => $report['items'],
+                                        'totalResults'  => $report['totalResults'],
+                                        'report_json'   => json_encode($json_data),
+                                        'chart_type'    => Input::get('chart_type')
+                                    ]);
 	}//report
 
 }//class

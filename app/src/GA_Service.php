@@ -28,12 +28,7 @@ class GA_Service{
 		  $this->client->setAccessToken($_SESSION['token']);
 		}
 
-		if ( !$this->client->getAccessToken() ) {//null
-			return false;
-		} else {
-			return true;
-		}//else
-
+		return $this->client->getAccessToken();
 	}//authenticate
 
 	public function login( $code ){
@@ -82,7 +77,7 @@ class GA_Service{
 		if( !$this->isLoggedIn() ){
 			//login
 		}
-
+		
 		try {
 			$service = new Google_AnalyticsService($this->client);
 			$man_properties = $service->management_webproperties->listManagementWebproperties($account_id);
@@ -158,18 +153,7 @@ class GA_Service{
 		return $data_items;
 	}//metadata
 
-	public function report( $view, $dimensions, $metrics ){
-		// to make the request quicker
-		$max_results = 10;
-		
-		// query the last month analytics
-		$now = new DateTime();
-		$end_date = $now->format('Y-m-d');
-		$start_date = $now->modify('-1 month')->format('Y-m-d');
-
-		// if( !is_array( $dimensions ) )
-		// 	$dimensions = array( $dimensions );
-
+	public function report( $view, $start_date, $end_date, $max_results, $dimensions, $metrics, $filters, $orderbys ){
 		$dimensions = implode( ",", $dimensions );
 		$metrics = implode( ",", $metrics );
 
@@ -179,6 +163,11 @@ class GA_Service{
 
 			$options['dimensions'] = $dimensions;
 			$options['max-results'] = $max_results;
+
+            if( !empty($filters) )
+                $options['filters'] = $filters;
+
+            $options['sort'] = $orderbys;
 
 			$data = $analytics->data_ga->get( $view, $start_date, $end_date, $metrics,
 				$options
