@@ -5,7 +5,7 @@
 	"license": "MIT",
 	"require": {
 		"laravel/framework": "4.2.*",
-		"google/api-client": "dev-master"
+		"google/apiclient": "dev-master"
 	},
 	"autoload": {
 		"classmap": [
