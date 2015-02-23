@@ -8,3 +8,5 @@ Thumbs.db
 vim
 .project
 .buildpath
+.idea/
+.vagrant/

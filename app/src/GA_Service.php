@@ -1,9 +1,6 @@
 <?php
 // i have a permission problem :/
-session_save_path("/tmp");
-
-
-session_start();
+use Illuminate\Support\Facades\Session;
 
 class GA_Service{
  	private $client;
@@ -18,14 +15,14 @@ class GA_Service{
 		$this->client->setClientSecret( Config::get('analytics.client_secret') );
 		$this->client->setDeveloperKey( Config::get('analytics.api_key') );
 		$this->client->setRedirectUri( 'http://localhost:8000/login');
-		$this->client->setScopes( array('https://www.googleapis.com/auth/analytics') );
+		$this->client->setScopes( ['https://www.googleapis.com/auth/analytics'] );
 		//$this->client->setUseObjects(true);
 	}
 
 	public function isLoggedIn(){
 		
-		if (isset($_SESSION['token'])) {
-		  $this->client->setAccessToken($_SESSION['token']);
+		if (Session::has('token')) {
+		  $this->client->setAccessToken(Session::get('token'));
 		}
 
 		return $this->client->getAccessToken();
@@ -35,7 +32,7 @@ class GA_Service{
 		
 	 	$this->client->authenticate($code);
 	 	$token = $this->client->getAccessToken();
-	  	$_SESSION['token'] = $token;
+	  	Session::put('token', $token);
 
 		return $token;
 	}//login
@@ -50,7 +47,7 @@ class GA_Service{
 			//login
 		}
 
-		$service = new Google_AnalyticsService($this->client);
+		$service = new Google_Service_Analytics($this->client);
 		$segments = $service->management_segments->listManagementSegments();
 
 		return $segments;
@@ -61,7 +58,7 @@ class GA_Service{
 			//login
 		}
 
-		$service = new Google_AnalyticsService($this->client);
+		$service = new Google_Service_Analytics($this->client);
 
 		$man_accounts = $service->management_accounts->listManagementAccounts();
 		$accounts = [];
@@ -79,7 +76,7 @@ class GA_Service{
 		}
 		
 		try {
-			$service = new Google_AnalyticsService($this->client);
+			$service = new Google_Service_Analytics($this->client);
 			$man_properties = $service->management_webproperties->listManagementWebproperties($account_id);
 			$properties = [];
 
@@ -88,7 +85,7 @@ class GA_Service{
 			}//foreach
 
 			return json_encode($properties);
-		} catch (Google_ServiceException $e) {
+		} catch (Google_Service_Exception $e) {
 			return Response::json([
 				'status'	=> 0,
 				'code'		=> 3,
@@ -104,7 +101,7 @@ class GA_Service{
 		}
 		
 		try {
-			$service = new Google_AnalyticsService($this->client);
+			$service = new Google_Service_Analytics($this->client);
 			$man_views = $service->management_profiles->listManagementProfiles( $account_id, $property_id );
 			$views = [];
 
@@ -113,7 +110,7 @@ class GA_Service{
 			}//foreach
 
 			return json_encode($views);
-		} catch (Google_ServiceException $e) {
+		} catch (Google_Service_Exception $e) {
 			return Response::json([
 				'status'	=> 0,
 				'code'		=> 3,
@@ -123,9 +120,9 @@ class GA_Service{
 	}//views
 
 	public function metadata(){
-		$gcurl = new Google_CurlIO;
+		$gcurl = new Google_IO_Curl($this->client);
 		$response = $gcurl->makeRequest( 
-			new Google_HttpRequest( "https://www.googleapis.com/analytics/v3/metadata/ga/columns" ) 
+			new Google_Http_Request( "https://www.googleapis.com/analytics/v3/metadata/ga/columns" )
 		);
 
 		//verify returned data
@@ -158,7 +155,7 @@ class GA_Service{
 		$metrics = implode( ",", $metrics );
 
 		try{
-			$analytics = new Google_AnalyticsService($this->client);
+			$analytics = new Google_Service_Analytics($this->client);
 			$options = [];
 
 			$options['dimensions'] = $dimensions;
@@ -179,7 +176,7 @@ class GA_Service{
 				'totalResults'	=> $data['totalResults']
 			];
 
-		}catch( Google_ServiceException $ex ){
+		}catch( Google_Service_Exception $ex ){
 			return Response::json([
 				'status'	=> 0,
 				'code'		=> 2,
